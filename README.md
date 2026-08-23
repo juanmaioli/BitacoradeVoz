@@ -18,14 +18,26 @@ Una aplicación web minimalista y accesible construida con **Node.js**, **Expres
 
 ## ⚙️ Requisitos Previos
 
-- **Node.js** v18 o superior.
-- **FFmpeg** instalado en el sistema (`sudo apt install ffmpeg`).
-- **Python 3** con entorno virtual `venv`.
-- Certificados SSL en `./ssl/apache.key` y `./ssl/apache.crt` (para soporte HTTPS).
+- **Docker** y **Docker Compose** instalados (o bien Node.js v18+, FFmpeg y Python 3 en local).
+- Certificados SSL opcionales en `./ssl/apache.key` y `./ssl/apache.crt` (para soporte HTTPS).
 
 ---
 
-## 🚀 Instalación y Configuración
+## 🐳 Despliegue con Docker Compose
+
+1. **Compilar e Iniciar el Contenedor:**
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. **Detener el Servicio:**
+   ```bash
+   docker compose down
+   ```
+
+---
+
+## 🚀 Instalación Local (Sin Docker)
 
 1. **Instalar dependencias de Node.js:**
    ```bash
@@ -45,18 +57,10 @@ Una aplicación web minimalista y accesible construida con **Node.js**, **Expres
    STORAGE_PATH=/ruta/a/tu/directorio_configurado
    ```
 
----
-
-## 🏁 Modo de Uso
-
-Iniciá el servidor web:
-```bash
-node server.js
-```
-
-Accedé desde tu navegador:
-- **Desde la computadora:** [https://localhost:3000](https://localhost:3000)
-- **Desde el celular (misma red Wi-Fi):** `https://<IP_DE_TU_COMPUTADORA>:3000`
+4. **Ejecutar la aplicación:**
+   ```bash
+   node server.js
+   ```
 
 ---
 

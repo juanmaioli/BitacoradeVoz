@@ -1,0 +1,7 @@
+node_modules/
+venv/
+tmp_uploads/
+storage/
+.env
+.git
+.gitignore
