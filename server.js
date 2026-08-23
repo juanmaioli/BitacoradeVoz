@@ -47,16 +47,24 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
+  const tempUploadPath = req.file.path;
   const audioDestination = path.join(targetDir, `${filename}.wav`);
   const mdDestination = path.join(targetDir, `${filename}.md`);
   const relAudioPath = path.join(relFolder, `${filename}.wav`);
   const relMdPath = path.join(relFolder, `${filename}.md`);
 
-  // Mover archivo subido al directorio final
-  fs.rename(req.file.path, audioDestination, (err) => {
-    if (err) {
-      console.error('Error al mover archivo de audio:', err);
-      return res.status(500).json({ error: 'Error al guardar el archivo de audio.' });
+  // Convertir el audio grabado (webm/mp4/ogg) a WAV PCM de 16kHz con ffmpeg
+  const ffmpegCmd = `ffmpeg -y -i "${tempUploadPath}" -ar 16000 -ac 1 -c:a pcm_s16le "${audioDestination}"`;
+
+  exec(ffmpegCmd, (ffmpegErr) => {
+    // Eliminar archivo temporal
+    if (fs.existsSync(tempUploadPath)) {
+      fs.unlinkSync(tempUploadPath);
+    }
+
+    if (ffmpegErr) {
+      console.error('Error al convertir audio con ffmpeg:', ffmpegErr);
+      return res.status(500).json({ error: 'Error al procesar el formato de audio.' });
     }
 
     // Ruta al ejecutable de Python del virtualenv si existe
