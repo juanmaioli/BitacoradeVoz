@@ -3,3 +3,5 @@ venv/
 tmp_uploads/
 .env
 storage/
+storage/*
+
