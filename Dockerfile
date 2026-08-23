@@ -18,7 +18,8 @@ RUN npm install --omit=dev
 
 # Crear entorno virtual de Python e instalar Whisper y Torch CPU
 RUN python3 -m venv venv && \
-    ./venv/bin/pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    ./venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    ./venv/bin/pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple && \
     ./venv/bin/pip install --no-cache-dir openai-whisper useful-moonshine keras einops soundfile librosa
 
 # Copiar el código fuente de la aplicación
