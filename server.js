@@ -55,8 +55,8 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
     const pythonCmd = fs.existsSync(venvPython) ? venvPython : 'python3';
     const scriptPath = path.join(__dirname, 'transcribe.py');
 
-    // Ejecutar Moonshine para transcripción
-    exec(`"${pythonCmd}" "${scriptPath}" "${audioDestination}"`, (execErr, stdout, stderr) => {
+    // Ejecutar Moonshine para transcripción especificando backend de Torch para Keras
+    exec(`KERAS_BACKEND=torch "${pythonCmd}" "${scriptPath}" "${audioDestination}"`, (execErr, stdout, stderr) => {
       let transcripcion = stdout ? stdout.trim() : '';
 
       if (execErr || !transcripcion) {
