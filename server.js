@@ -19,7 +19,7 @@ app.use(express.static('public'));
 // Configuración de multer para guardar temporalmente los archivos de audio
 const upload = multer({ dest: path.join(__dirname, 'tmp_uploads') });
 
-// Helper para datos de fecha/hora: YYYY/MM/DD y prefijo YYYYMMDD_HHMM
+// Helper para datos de fecha/hora: YYYY/MM/DD y prefijo YYYYMMDD_HHMMSS
 function getDatePathInfo() {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -28,10 +28,11 @@ function getDatePathInfo() {
   const day = pad(now.getDate());
   const hours = pad(now.getHours());
   const minutes = pad(now.getMinutes());
+  const seconds = pad(now.getSeconds());
   
   const relFolder = path.join(year, month, day);
-  const filename = `${year}${month}${day}_${hours}${minutes}`;
-  return { relFolder, filename, year, month, day, hours, minutes };
+  const filename = `${year}${month}${day}_${hours}${minutes}${seconds}`;
+  return { relFolder, filename, year, month, day, hours, minutes, seconds };
 }
 
 // Endpoint: Grabar y Procesar Audio
@@ -40,7 +41,7 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
     return res.status(400).json({ error: 'No se recibió ningún archivo de audio.' });
   }
 
-  const { relFolder, filename, hours, minutes } = getDatePathInfo();
+  const { relFolder, filename, hours, minutes, seconds } = getDatePathInfo();
   const targetDir = path.join(STORAGE_PATH, relFolder);
 
   if (!fs.existsSync(targetDir)) {
@@ -87,7 +88,7 @@ fecha: ${new Date().toISOString()}
 archivo: ${filename}
 ---
 
-# 🎙️ Entrada de Bitácora - ${hours}:${minutes}
+# 🎙️ Entrada de Bitácora - ${hours}:${minutes}:${seconds}
 
 ## 📝 Transcripción
 ${transcripcion}
@@ -132,7 +133,12 @@ app.get('/api/entradas', (req, res) => {
       
       const partes = baseName.split('_');
       const timePart = partes[1] || '';
-      const horaFormateada = timePart.length >= 4 ? `${timePart.substring(0, 2)}:${timePart.substring(2, 4)}` : baseName;
+      let horaFormateada = baseName;
+      if (timePart.length >= 6) {
+        horaFormateada = `${timePart.substring(0, 2)}:${timePart.substring(2, 4)}:${timePart.substring(4, 6)}`;
+      } else if (timePart.length >= 4) {
+        horaFormateada = `${timePart.substring(0, 2)}:${timePart.substring(2, 4)}`;
+      }
 
       return {
         id: baseName,
