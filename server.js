@@ -128,9 +128,25 @@ app.get('/api/entradas', (req, res) => {
   }
 });
 
+const https = require('https');
+const http = require('http');
+
 // Endpoint: Servir Archivos de Audio y Markdown
 app.use('/storage', express.static(STORAGE_PATH));
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
-});
+const keyPath = path.join(__dirname, 'ssl', 'apache.key');
+const crtPath = path.join(__dirname, 'ssl', 'apache.crt');
+
+if (fs.existsSync(keyPath) && fs.existsSync(crtPath)) {
+  const options = {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(crtPath)
+  };
+  https.createServer(options, app).listen(PORT, () => {
+    console.log(`🔒 Servidor HTTPS ejecutándose en https://localhost:${PORT}`);
+  });
+} else {
+  http.createServer(app).listen(PORT, () => {
+    console.log(`🚀 Servidor HTTP ejecutándose en http://localhost:${PORT}`);
+  });
+}
