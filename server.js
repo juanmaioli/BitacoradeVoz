@@ -92,11 +92,15 @@ ${transcripcion}
   });
 });
 
-// Endpoint: Listar Entradas
+// Endpoint: Listar Entradas (solo del día actual)
 app.get('/api/entradas', (req, res) => {
   try {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
     const directories = fs.readdirSync(STORAGE_PATH, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory())
+      .filter(dirent => dirent.isDirectory() && dirent.name.startsWith(todayPrefix))
       .map(dirent => dirent.name)
       .sort()
       .reverse();

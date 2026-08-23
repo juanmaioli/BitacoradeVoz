@@ -20,26 +20,20 @@
 </head>
 <body class="bg-dark text-light">
   <div class="container py-4" style="max-width: 800px;">
-    <header class="pb-3 mb-4 border-bottom d-flex align-items-center justify-content-between">
-      <h1 class="h3 m-0">🎙️ Bitácora de Voz</h1>
-      <span class="badge bg-primary fs-6">Moonshine STT</span>
-    </header>
-
     <!-- Grabador -->
     <main>
       <div class="card bg-body-tertiary shadow mb-4">
         <div class="card-body text-center py-4">
-          <h2 class="h5 card-title mb-3">Grabar Nueva Entrada</h2>
-          <p id="status-text" class="text-secondary mb-3">Presioná el botón para iniciar la grabación.</p>
-
           <div class="d-flex justify-content-center gap-2 mb-3">
-            <button id="btn-record" class="btn btn-danger btn-lg px-4 d-flex align-items-center gap-2">
-              <i class="bi bi-mic-fill"></i> Iniciar Grabación
+            <button id="btn-record" class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center p-3" style="width: 70px; height: 70px;" aria-label="Iniciar Grabación">
+              <i class="bi bi-mic-fill fs-2"></i>
             </button>
-            <button id="btn-stop" class="btn btn-secondary btn-lg px-4 d-none d-flex align-items-center gap-2">
-              <i class="bi bi-stop-fill"></i> Detener y Guardar
+            <button id="btn-stop" class="btn btn-secondary btn-lg rounded-circle d-none d-flex align-items-center justify-content-center p-3" style="width: 70px; height: 70px;" aria-label="Detener y Guardar">
+              <i class="bi bi-stop-fill fs-2"></i>
             </button>
           </div>
+
+          <p id="status-text" class="text-secondary mb-3">Presioná el botón para iniciar la grabación.</p>
 
           <div id="recording-spinner" class="d-none my-3">
             <div class="spinner-border text-danger" role="status">
@@ -71,13 +65,32 @@
     const audioPreview = document.getElementById('audio-preview');
     const listaEntradas = document.getElementById('lista-entradas');
 
+    let mimeType = '';
+
     btnRecord.addEventListener('click', async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        
+        // Detectar MIME type soportado por el navegador móvil (ej. audio/webm o audio/mp4 en iOS)
+        if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg';
+        } else {
+          mimeType = '';
+        }
+
+        const options = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(stream, options);
         audioChunks = [];
 
-        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
         mediaRecorder.onstop = uploadAudio;
 
         mediaRecorder.start();
@@ -86,7 +99,7 @@
         statusText.textContent = '🔴 Grabando en progreso...';
         statusText.classList.add('text-danger', 'fw-bold');
       } catch (err) {
-        alert('No se pudo acceder al micrófono: ' + err.message);
+        alert('No se pudo acceder al micrófono: ' + err.message + '\n(Asegurate de estar usando una conexión segura HTTPS o localhost).');
       }
     });
 
@@ -102,7 +115,8 @@
     });
 
     async function uploadAudio() {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const blobType = mimeType || 'audio/wav';
+      const audioBlob = new Blob(audioChunks, { type: blobType });
       const formData = new FormData();
       formData.append('audio', audioBlob, 'grabacion.wav');
 
@@ -121,28 +135,64 @@
       }
     }
 
+    let currentAudio = null;
+    let currentBtn = null;
+
+    function toggleAudio(id, btn) {
+      const audioUrl = `/storage/${id}/entrada.wav`;
+      
+      if (currentAudio && currentAudio.src.endsWith(audioUrl)) {
+        if (currentAudio.paused) {
+          currentAudio.play();
+          btn.innerHTML = '<i class="bi bi-pause-fill fs-5"></i>';
+        } else {
+          currentAudio.pause();
+          btn.innerHTML = '<i class="bi bi-play-fill fs-5"></i>';
+        }
+        return;
+      }
+
+      if (currentAudio) {
+        currentAudio.pause();
+        if (currentBtn) currentBtn.innerHTML = '<i class="bi bi-play-fill fs-5"></i>';
+      }
+
+      currentAudio = new Audio(audioUrl);
+      currentBtn = btn;
+      currentAudio.play();
+      btn.innerHTML = '<i class="bi bi-pause-fill fs-5"></i>';
+
+      currentAudio.onended = () => {
+        btn.innerHTML = '<i class="bi bi-play-fill fs-5"></i>';
+      };
+    }
+
     async function cargarEntradas() {
       try {
         const res = await fetch('/api/entradas');
         const entradas = await res.json();
 
         if (entradas.length === 0) {
-          listaEntradas.innerHTML = '<div class="text-center text-secondary py-3">No hay entradas aún.</div>';
+          listaEntradas.innerHTML = '<div class="text-center text-secondary py-2 small">No hay entradas hoy.</div>';
           return;
         }
 
-        listaEntradas.innerHTML = entradas.map(e => `
-          <div class="list-group-item bg-body-tertiary border-secondary mb-2 rounded">
-            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-              <h5 class="mb-1 text-primary">📅 ${e.nombre}</h5>
-              <a href="/storage/${e.id}/entrada.md" target="_blank" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-file-earmark-text"></i> Abrir .md
+        listaEntradas.innerHTML = entradas.map(e => {
+          // Extraer la hora (HH-mm-ss) del id (YYYY-MM-DD_HH-mm-ss)
+          const partes = e.id.split('_');
+          const horaFormateada = partes[1] ? partes[1].replaceAll('-', ':') : e.nombre;
+
+          return `
+            <div class="list-group-item bg-body-tertiary border-secondary mb-1 rounded d-flex align-items-center justify-content-between px-3 py-2">
+              <a href="/storage/${e.id}/entrada.md" target="_blank" class="text-decoration-none text-light fw-bold fs-6 d-flex align-items-center gap-2">
+                <i class="bi bi-clock text-primary"></i> ${horaFormateada}
               </a>
+              <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.id}', this)" aria-label="Reproducir o pausar audio">
+                <i class="bi bi-play-fill fs-5"></i>
+              </button>
             </div>
-            <p class="mb-2 text-light fs-6">${e.snippet || 'Sin transcripción'}</p>
-            <audio controls class="w-100 mt-1" src="/storage/${e.id}/entrada.wav"></audio>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (err) {
         listaEntradas.innerHTML = '<div class="text-center text-danger py-3">Error al cargar entradas.</div>';
       }
