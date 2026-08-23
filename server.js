@@ -19,13 +19,19 @@ app.use(express.static('public'));
 // Configuración de multer para guardar temporalmente los archivos de audio
 const upload = multer({ dest: path.join(__dirname, 'tmp_uploads') });
 
-// Helper para formato de fecha/hora en carpetas YYYY-MM-DD_HH-mm
-function getFormattedTimestamp() {
+// Helper para datos de fecha/hora: YYYY/MM/DD y prefijo YYYYMMDD_HHMM
+function getDatePathInfo() {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
-  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  const timeStr = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-  return `${dateStr}_${timeStr}`;
+  const year = `${now.getFullYear()}`;
+  const month = pad(now.getMonth() + 1);
+  const day = pad(now.getDate());
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  
+  const relFolder = path.join(year, month, day);
+  const filename = `${year}${month}${day}_${hours}${minutes}`;
+  return { relFolder, filename, year, month, day, hours, minutes };
 }
 
 // Endpoint: Grabar y Procesar Audio
@@ -34,14 +40,17 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
     return res.status(400).json({ error: 'No se recibió ningún archivo de audio.' });
   }
 
-  const folderName = getFormattedTimestamp();
-  const entryDir = path.join(STORAGE_PATH, folderName);
+  const { relFolder, filename, hours, minutes } = getDatePathInfo();
+  const targetDir = path.join(STORAGE_PATH, relFolder);
 
-  if (!fs.existsSync(entryDir)) {
-    fs.mkdirSync(entryDir, { recursive: true });
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  const audioDestination = path.join(entryDir, 'entrada.wav');
+  const audioDestination = path.join(targetDir, `${filename}.wav`);
+  const mdDestination = path.join(targetDir, `${filename}.md`);
+  const relAudioPath = path.join(relFolder, `${filename}.wav`);
+  const relMdPath = path.join(relFolder, `${filename}.md`);
 
   // Mover archivo subido al directorio final
   fs.rename(req.file.path, audioDestination, (err) => {
@@ -67,24 +76,25 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
       // Crear archivo Markdown
       const mdContent = `---
 fecha: ${new Date().toISOString()}
-carpeta: ${folderName}
+archivo: ${filename}
 ---
 
-# 🎙️ Entrada de Bitácora - ${folderName.replace('_', ' ')}
+# 🎙️ Entrada de Bitácora - ${hours}:${minutes}
 
 ## 📝 Transcripción
 ${transcripcion}
 
 ## 🔊 Audio
-- Archivo: \`entrada.wav\`
+- Archivo: \`${filename}.wav\`
 `;
 
-      const mdPath = path.join(entryDir, 'entrada.md');
-      fs.writeFileSync(mdPath, mdContent, 'utf-8');
+      fs.writeFileSync(mdDestination, mdContent, 'utf-8');
 
       res.json({
         success: true,
-        id: folderName,
+        id: filename,
+        relAudioPath: relAudioPath,
+        relMdPath: relMdPath,
         transcripcion: transcripcion,
         fecha: new Date().toISOString()
       });
@@ -92,33 +102,35 @@ ${transcripcion}
   });
 });
 
-// Endpoint: Listar Entradas (solo del día actual)
+// Endpoint: Listar Entradas (solo del día actual YYYY/MM/DD)
 app.get('/api/entradas', (req, res) => {
   try {
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const todayPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const { relFolder } = getDatePathInfo();
+    const todayDir = path.join(STORAGE_PATH, relFolder);
 
-    const directories = fs.readdirSync(STORAGE_PATH, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory() && dirent.name.startsWith(todayPrefix))
-      .map(dirent => dirent.name)
+    if (!fs.existsSync(todayDir)) {
+      return res.json([]);
+    }
+
+    const files = fs.readdirSync(todayDir)
+      .filter(file => file.endsWith('.md'))
       .sort()
       .reverse();
 
-    const entradas = directories.map(folder => {
-      const mdPath = path.join(STORAGE_PATH, folder, 'entrada.md');
-      let transcripcionSnippet = '';
-
-      if (fs.existsSync(mdPath)) {
-        const content = fs.readFileSync(mdPath, 'utf-8');
-        const match = content.match(/## 📝 Transcripción\n([\s\S]*?)(?=\n##|$)/);
-        if (match) transcripcionSnippet = match[1].trim();
-      }
+    const entradas = files.map(file => {
+      const baseName = file.replace('.md', '');
+      const relMdPath = path.join(relFolder, `${baseName}.md`);
+      const relAudioPath = path.join(relFolder, `${baseName}.wav`);
+      
+      const partes = baseName.split('_');
+      const timePart = partes[1] || '';
+      const horaFormateada = timePart.length >= 4 ? `${timePart.substring(0, 2)}:${timePart.substring(2, 4)}` : baseName;
 
       return {
-        id: folder,
-        nombre: folder.replace('_', ' '),
-        snippet: transcripcionSnippet.substring(0, 120) + (transcripcionSnippet.length > 120 ? '...' : '')
+        id: baseName,
+        hora: horaFormateada,
+        relMdPath: relMdPath,
+        relAudioPath: relAudioPath
       };
     });
 

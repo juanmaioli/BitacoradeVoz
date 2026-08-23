@@ -138,8 +138,8 @@
     let currentAudio = null;
     let currentBtn = null;
 
-    function toggleAudio(id, btn) {
-      const audioUrl = `/storage/${id}/entrada.wav`;
+    function toggleAudio(relAudioPath, btn) {
+      const audioUrl = `/storage/${relAudioPath}`;
       
       if (currentAudio && currentAudio.src.endsWith(audioUrl)) {
         if (currentAudio.paused) {
@@ -178,16 +178,12 @@
         }
 
         listaEntradas.innerHTML = entradas.map(e => {
-          // Extraer la hora (HH-mm-ss) del id (YYYY-MM-DD_HH-mm-ss)
-          const partes = e.id.split('_');
-          const horaFormateada = partes[1] ? partes[1].replaceAll('-', ':') : e.nombre;
-
           return `
             <div class="list-group-item bg-body-tertiary border-secondary mb-1 rounded d-flex align-items-center justify-content-between px-3 py-2">
-              <a href="/storage/${e.id}/entrada.md" target="_blank" class="text-decoration-none text-light fw-bold fs-6 d-flex align-items-center gap-2">
-                <i class="bi bi-clock text-primary"></i> ${horaFormateada}
+              <a href="/storage/${e.relMdPath}" target="_blank" class="text-decoration-none text-light fw-bold fs-6 d-flex align-items-center gap-2">
+                <i class="bi bi-clock text-primary"></i> ${e.hora}
               </a>
-              <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.id}', this)" aria-label="Reproducir o pausar audio">
+              <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.relAudioPath}', this)" aria-label="Reproducir o pausar audio">
                 <i class="bi bi-play-fill fs-5"></i>
               </button>
             </div>
