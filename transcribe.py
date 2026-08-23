@@ -1,14 +1,17 @@
 import sys
 import os
 import argparse
+import warnings
+
+# Suprimir advertencias secundarias de PyTorch/FP16 en CPU
+warnings.filterwarnings("ignore")
 
 def transcribe(audio_path):
-    # Intentar transcribir con OpenAI Whisper indicando idioma español
+    # Intentar transcribir con OpenAI Whisper en español usando el modelo 'small' (más preciso)
     try:
         import whisper
-        # Usamos el modelo 'tiny' o 'base' optimizado para voz rápida en español
-        model = whisper.load_model("tiny")
-        result = model.transcribe(audio_path, language="es")
+        model = whisper.load_model("small")
+        result = model.transcribe(audio_path, language="es", fp16=False)
         if result and "text" in result and result["text"].strip():
             return result["text"].strip()
     except Exception as e_whisper:
