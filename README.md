@@ -1,4 +1,4 @@
-# 🎙️ Bitácora de Voz (Btcr)
+# 🎙️ Bitácora de Voz
 
 Una aplicación web minimalista y accesible construida con **Node.js**, **Express**, **ffmpeg** y **Whisper (Python)** que te permite grabar entradas de voz directamente desde el navegador (escritorio y dispositivos móviles) y convertirlas en notas en formato **Markdown** escritas en español.
 

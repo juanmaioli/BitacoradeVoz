@@ -1,6 +1,6 @@
 {
-  "name": "btcr",
-  "version": "1.6.0",
+  "name": "bitacora-de-voz",
+  "version": "1.6.1",
   "description": "",
   "main": "index.js",
   "scripts": {
