@@ -9,6 +9,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, 'storage');
 
+const TEMPLATE_PATH = process.env.TEMPLATE_PATH || '/home/juan/Documentos/Notas/templates/Transcripción.md';
+
 if (!fs.existsSync(STORAGE_PATH)) {
   fs.mkdirSync(STORAGE_PATH, { recursive: true });
 }
@@ -41,7 +43,7 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
     return res.status(400).json({ error: 'No se recibió ningún archivo de audio.' });
   }
 
-  const { relFolder, filename, hours, minutes, seconds } = getDatePathInfo();
+  const { relFolder, filename, year, month, day, hours, minutes, seconds } = getDatePathInfo();
   const targetDir = path.join(STORAGE_PATH, relFolder);
 
   if (!fs.existsSync(targetDir)) {
@@ -82,20 +84,42 @@ app.post('/api/grabar', upload.single('audio'), (req, res) => {
         transcripcion = '[Transcripción pendiente o sin audio detectable]';
       }
 
-      // Crear archivo Markdown
-      const mdContent = `---
-fecha: ${new Date().toISOString()}
-archivo: ${filename}
+      // Crear archivo Markdown usando la plantilla
+      let mdContent = '';
+      if (fs.existsSync(TEMPLATE_PATH)) {
+        try {
+          const rawTemplate = fs.readFileSync(TEMPLATE_PATH, 'utf-8');
+          mdContent = rawTemplate
+            .replace(/yyyy-mm-dd hh:mm:ss/gi, `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`)
+            .replace(/yyyymmdd_hhmmss\.wav/gi, `${filename}.wav`)
+            .replace(/hh:mm:ss/g, `${hours}:${minutes}:${seconds}`)
+            .replace(/Texto de la Transcripción/g, transcripcion);
+        } catch (err) {
+          console.error('Error al leer la plantilla:', err);
+        }
+      }
+
+      if (!mdContent) {
+        mdContent = `---
+Fecha: ${year}-${month}-${day} ${hours}:${minutes}:${seconds}
+Audio: ${filename}.wav
+Author: Juan Maioli
 ---
 
-# 🎙️ Entrada de Bitácora - ${hours}:${minutes}:${seconds}
+## 🎙️ Entrada de Bitácora -  ${hours}:${minutes}:${seconds}
+##### Estado: 
+- [x] Nueva
 
-## 📝 Transcripción
+
+#### 📝 Transcripción
+\`\`\`text
 ${transcripcion}
+\`\`\`
 
-## 🔊 Audio
-- Archivo: \`${filename}.wav\`
+##### 🔊 Audio
+- Archivo: ![[${filename}.wav]]
 `;
+      }
 
       fs.writeFileSync(mdDestination, mdContent, 'utf-8');
 

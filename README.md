@@ -10,6 +10,7 @@ Una aplicación web minimalista y accesible construida con **Node.js**, **Expres
 - 📱 **Soporte Móvil & HTTPS:** Funciona en navegadores móviles (Chrome Android, Safari iOS) a través de HTTPS seguro y detección dinámica de formatos (`webm`, `mp4`, `ogg`).
 - 🔄 **Conversión de Audio con FFmpeg:** Conversión automática del audio capturado a formato estándar **WAV PCM 16kHz mono**.
 - 🤖 **Transcripción Multilingüe en Español:** Reconocimiento de voz local preciso en español impulsado por **OpenAI Whisper (modelo small)**.
+- 📝 **Plantillas Personalizables:** Soporte para plantillas Markdown externas (como `Transcripción.md`) configurables mediante `TEMPLATE_PATH`.
 - ⏱️ **Múltiples Notas por Minuto:** Archivos nombrados con precisión de segundos (`YYYYMMDD_HHMMSS.md` y `YYYYMMDD_HHMMSS.wav`).
 - 📁 **Organización por Fecha:** Estructura jerárquica en `storage/YYYY/MM/DD/`.
 - 📖 **Vista Compacta:** Muestra las notas del día actual con reproductor de audio integrado (`▶` / `⏸`) y sticky footer pegado al fondo.
@@ -55,6 +56,7 @@ Una aplicación web minimalista y accesible construida con **Node.js**, **Expres
    ```env
    PORT=3000
    STORAGE_PATH=/ruta/a/tu/directorio_configurado
+   TEMPLATE_PATH=/home/juan/Documentos/Notas/templates/Transcripción.md
    ```
 
 4. **Ejecutar la aplicación:**
