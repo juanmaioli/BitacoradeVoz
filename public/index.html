@@ -180,6 +180,34 @@
       }
     }
 
+    async function eliminarEntrada(relMdPath, relAudioPath, hora) {
+      if (!confirm(`¿Estás seguro de que deseás eliminar la nota de las ${hora} y su archivo de audio?`)) {
+        return;
+      }
+
+      if (currentAudio && currentAudio.src.includes(relAudioPath)) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      try {
+        const res = await fetch('/api/entradas/eliminar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ relMdPath, relAudioPath })
+        });
+        const data = await res.json();
+        if (data.success) {
+          cargarEntradas();
+        } else {
+          alert('Error al eliminar la entrada: ' + (data.error || 'Desconocido'));
+        }
+      } catch (err) {
+        console.error('Error al eliminar:', err);
+        alert('Error en la comunicación con el servidor al eliminar.');
+      }
+    }
+
     async function cargarEntradas() {
       try {
         const res = await fetch('/api/entradas');
@@ -204,9 +232,14 @@
                 </a>
                 ${badgeNueva}
               </div>
-              <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.relAudioPath}', this)" aria-label="Reproducir o pausar audio">
-                <i class="bi bi-play-fill fs-5"></i>
-              </button>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.relAudioPath}', this)" aria-label="Reproducir o pausar audio" title="Reproducir audio">
+                  <i class="bi bi-play-fill fs-5"></i>
+                </button>
+                <button class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="eliminarEntrada('${e.relMdPath}', '${e.relAudioPath}', '${e.hora}')" aria-label="Eliminar nota y audio" title="Eliminar nota y audio">
+                  <i class="bi bi-trash3-fill fs-6"></i>
+                </button>
+              </div>
             </div>
           `;
         }).join('');

@@ -215,6 +215,35 @@ app.post('/api/entradas/toggle-nueva', (req, res) => {
   }
 });
 
+// Endpoint: Eliminar entrada (Nota Markdown y Audio WAV)
+app.post('/api/entradas/eliminar', (req, res) => {
+  try {
+    const { relMdPath, relAudioPath } = req.body;
+    if (!relMdPath && !relAudioPath) {
+      return res.status(400).json({ error: 'Rutas no proporcionadas' });
+    }
+
+    if (relMdPath) {
+      const fullMdPath = path.join(STORAGE_PATH, relMdPath);
+      if (fs.existsSync(fullMdPath)) {
+        fs.unlinkSync(fullMdPath);
+      }
+    }
+
+    if (relAudioPath) {
+      const fullAudioPath = path.join(STORAGE_PATH, relAudioPath);
+      if (fs.existsSync(fullAudioPath)) {
+        fs.unlinkSync(fullAudioPath);
+      }
+    }
+
+    res.json({ success: true, message: 'Entrada y audio eliminados correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar entrada:', error);
+    res.status(500).json({ error: 'Error al eliminar la entrada.' });
+  }
+});
+
 const https = require('https');
 const http = require('http');
 
