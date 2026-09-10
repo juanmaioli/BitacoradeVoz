@@ -11,6 +11,7 @@ Una aplicación web minimalista y accesible construida con **Node.js**, **Expres
 - 🔄 **Conversión de Audio con FFmpeg:** Conversión automática del audio capturado a formato estándar **WAV PCM 16kHz mono**.
 - 🤖 **Transcripción Multilingüe en Español:** Reconocimiento de voz local preciso en español impulsado por **OpenAI Whisper (modelo small)**.
 - 📝 **Plantillas Personalizables:** Soporte para plantillas Markdown externas (como `Transcripción.md`) configurables mediante `TEMPLATE_PATH`.
+- ✅ **Control de Estado de Notas:** Checkbox interactivo en la interfaz para marcar/desmarcar notas como `Nueva` o `Revisada` con sincronización en tiempo real en los archivos Markdown.
 - ⏱️ **Múltiples Notas por Minuto:** Archivos nombrados con precisión de segundos (`YYYYMMDD_HHMMSS.md` y `YYYYMMDD_HHMMSS.wav`).
 - 📁 **Organización por Fecha:** Estructura jerárquica en `storage/YYYY/MM/DD/`.
 - 📖 **Vista Compacta:** Muestra las notas del día actual con reproductor de audio integrado (`▶` / `⏸`) y sticky footer pegado al fondo.

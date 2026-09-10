@@ -164,17 +164,54 @@ app.get('/api/entradas', (req, res) => {
         horaFormateada = `${timePart.substring(0, 2)}:${timePart.substring(2, 4)}`;
       }
 
+      const mdFullPath = path.join(todayDir, file);
+      let esNueva = false;
+      try {
+        const mdText = fs.readFileSync(mdFullPath, 'utf-8');
+        esNueva = /-\s*\[x\]\s*nueva/i.test(mdText);
+      } catch (err) {
+        console.error('Error al leer estado de la nota:', err);
+      }
+
       return {
         id: baseName,
         hora: horaFormateada,
         relMdPath: relMdPath,
-        relAudioPath: relAudioPath
+        relAudioPath: relAudioPath,
+        esNueva: esNueva
       };
     });
 
     res.json(entradas);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener entradas de la bitácora.' });
+  }
+});
+
+// Endpoint: Cambiar estado [x] Nueva de una entrada
+app.post('/api/entradas/toggle-nueva', (req, res) => {
+  try {
+    const { relMdPath, esNueva } = req.body;
+    if (!relMdPath) {
+      return res.status(400).json({ error: 'Ruta no proporcionada' });
+    }
+
+    const fullPath = path.join(STORAGE_PATH, relMdPath);
+    if (!fs.existsSync(fullPath)) {
+      return res.status(404).json({ error: 'Archivo no encontrado' });
+    }
+
+    let content = fs.readFileSync(fullPath, 'utf-8');
+    if (esNueva) {
+      content = content.replace(/-\s*\[\s*\]\s*nueva/i, '- [x] Nueva');
+    } else {
+      content = content.replace(/-\s*\[x\]\s*nueva/i, '- [ ] Nueva');
+    }
+
+    fs.writeFileSync(fullPath, content, 'utf-8');
+    res.json({ success: true, esNueva });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar el estado de la entrada.' });
   }
 });
 

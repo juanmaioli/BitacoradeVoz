@@ -167,6 +167,19 @@
       };
     }
 
+    async function toggleEstadoNueva(relMdPath, esNueva) {
+      try {
+        await fetch('/api/entradas/toggle-nueva', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ relMdPath, esNueva })
+        });
+        cargarEntradas();
+      } catch (err) {
+        console.error('Error al cambiar estado:', err);
+      }
+    }
+
     async function cargarEntradas() {
       try {
         const res = await fetch('/api/entradas');
@@ -178,11 +191,19 @@
         }
 
         listaEntradas.innerHTML = entradas.map(e => {
+          const badgeNueva = e.esNueva 
+            ? `<span class="badge bg-success text-white fw-semibold ms-1">Nueva</span>` 
+            : `<span class="badge bg-secondary-subtle text-secondary-emphasis fw-normal ms-1">Revisada</span>`;
+
           return `
             <div class="list-group-item bg-body-tertiary border-secondary mb-1 rounded d-flex align-items-center justify-content-between px-3 py-2">
-              <a href="/storage/${e.relMdPath}" target="_blank" class="text-decoration-none text-light fw-bold fs-6 d-flex align-items-center gap-2">
-                <i class="bi bi-clock text-primary"></i> ${e.hora}
-              </a>
+              <div class="d-flex align-items-center gap-2">
+                <input class="form-check-input mt-0" type="checkbox" ${e.esNueva ? 'checked' : ''} onchange="toggleEstadoNueva('${e.relMdPath}', this.checked)" title="Marcar/Desmarcar como Nueva" aria-label="Marcar como nueva" style="cursor: pointer; width: 1.25em; height: 1.25em;">
+                <a href="/storage/${e.relMdPath}" target="_blank" class="text-decoration-none text-light fw-bold fs-6 d-flex align-items-center gap-2 ms-1">
+                  <i class="bi bi-clock text-primary"></i> ${e.hora}
+                </a>
+                ${badgeNueva}
+              </div>
               <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 36px; height: 36px;" onclick="toggleAudio('${e.relAudioPath}', this)" aria-label="Reproducir o pausar audio">
                 <i class="bi bi-play-fill fs-5"></i>
               </button>
