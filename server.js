@@ -2,24 +2,28 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { exec } = require('child_process');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, 'storage');
-
 const TEMPLATE_PATH = process.env.TEMPLATE_PATH || '/home/juan/Documentos/Notas/templates/Transcripción.md';
+const TMP_DIR = process.env.TMP_DIR || path.join(os.tmpdir(), 'bitacora_uploads');
 
 if (!fs.existsSync(STORAGE_PATH)) {
   fs.mkdirSync(STORAGE_PATH, { recursive: true });
+}
+if (!fs.existsSync(TMP_DIR)) {
+  fs.mkdirSync(TMP_DIR, { recursive: true });
 }
 
 app.use(express.json());
 app.use(express.static('public'));
 
 // Configuración de multer para guardar temporalmente los archivos de audio
-const upload = multer({ dest: path.join(__dirname, 'tmp_uploads') });
+const upload = multer({ dest: TMP_DIR });
 
 // Helper para datos de fecha/hora: YYYY/MM/DD y prefijo YYYYMMDD_HHMMSS
 function getDatePathInfo() {

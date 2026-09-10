@@ -25,6 +25,12 @@ RUN python3 -m venv venv && \
 # Copiar el código fuente de la aplicación
 COPY . .
 
+# Preparar directorios de cache y almacenamiento con permisos para el usuario node (UID/GID 1000)
+RUN mkdir -p /home/node/.cache /app/tmp_uploads /app/storage && \
+    chown -R node:node /app /home/node
+
+USER node
+
 EXPOSE 3000
 
 CMD ["node", "server.js"]
